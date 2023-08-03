@@ -349,6 +349,7 @@ namespace Microsoft.Data.Analysis
         private static DataFrame ReadCsvLinesIntoDataFrame(WrappedStreamReaderOrStringReader wrappedReader,
                                 char separator = ',', bool header = true,
                                 string[] columnNames = null, Type[] dataTypes = null,
+                                Dictionary<string, Type> columnTypes = null,
                                 long numberOfRowsToRead = -1, int guessRows = 10, bool addIndexColumn = false
                                 )
         {
@@ -410,7 +411,9 @@ namespace Microsoft.Data.Analysis
                 // Guesses types or looks up dataTypes and adds columns.
                 for (int i = 0; i < numberOfColumns; ++i)
                 {
-                    Type kind = dataTypes == null ? GuessKind(i, linesForGuessType) : dataTypes[i];
+                    Type kind = columnTypes?.ContainsKey(columnNames[i]) == true ? columnTypes[columnNames[i]] : null;
+                    if (kind == null)
+                        kind = dataTypes == null ? GuessKind(i, linesForGuessType) : dataTypes[i];
                     columns.Add(CreateColumn(kind, columnNames, i));
                 }
             }
@@ -500,6 +503,7 @@ namespace Microsoft.Data.Analysis
         /// <param name="header">has a header or not</param>
         /// <param name="columnNames">column names (can be empty)</param>
         /// <param name="dataTypes">column types (can be empty)</param>
+        /// <param name="columnTypes">preset column types (can be empty)</param>
         /// <param name="numberOfRowsToRead">number of rows to read not including the header(if present)</param>
         /// <param name="guessRows">number of rows used to guess types</param>
         /// <param name="addIndexColumn">add one column with the row index</param>
@@ -507,10 +511,11 @@ namespace Microsoft.Data.Analysis
         public static DataFrame LoadCsvFromString(string csvString,
                                 char separator = ',', bool header = true,
                                 string[] columnNames = null, Type[] dataTypes = null,
+                                Dictionary<string, Type> columnTypes = null,
                                 long numberOfRowsToRead = -1, int guessRows = 10, bool addIndexColumn = false)
         {
             WrappedStreamReaderOrStringReader wrappedStreamReaderOrStringReader = new WrappedStreamReaderOrStringReader(csvString);
-            return ReadCsvLinesIntoDataFrame(wrappedStreamReaderOrStringReader, separator, header, columnNames, dataTypes, numberOfRowsToRead, guessRows, addIndexColumn);
+            return ReadCsvLinesIntoDataFrame(wrappedStreamReaderOrStringReader, separator, header, columnNames, dataTypes, columnTypes, numberOfRowsToRead, guessRows, addIndexColumn);
         }
 
         /// <summary>
@@ -521,6 +526,7 @@ namespace Microsoft.Data.Analysis
         /// <param name="header">has a header or not</param>
         /// <param name="columnNames">column names (can be empty)</param>
         /// <param name="dataTypes">column types (can be empty)</param>
+        /// <param name="columnTypes">preset column types (can be empty)</param>
         /// <param name="numberOfRowsToRead">number of rows to read not including the header(if present)</param>
         /// <param name="guessRows">number of rows used to guess types</param>
         /// <param name="addIndexColumn">add one column with the row index</param>
@@ -529,6 +535,7 @@ namespace Microsoft.Data.Analysis
         public static DataFrame LoadCsv(Stream csvStream,
                                 char separator = ',', bool header = true,
                                 string[] columnNames = null, Type[] dataTypes = null,
+                                Dictionary<string, Type> columnTypes = null,
                                 long numberOfRowsToRead = -1, int guessRows = 10, bool addIndexColumn = false,
                                 Encoding encoding = null)
         {
@@ -543,7 +550,7 @@ namespace Microsoft.Data.Analysis
             }
 
             WrappedStreamReaderOrStringReader wrappedStreamReaderOrStringReader = new WrappedStreamReaderOrStringReader(csvStream, encoding ?? Encoding.UTF8);
-            return ReadCsvLinesIntoDataFrame(wrappedStreamReaderOrStringReader, separator, header, columnNames, dataTypes, numberOfRowsToRead, guessRows, addIndexColumn);
+            return ReadCsvLinesIntoDataFrame(wrappedStreamReaderOrStringReader, separator, header, columnNames, dataTypes, columnTypes, numberOfRowsToRead, guessRows, addIndexColumn);
         }
 
         /// <summary>
